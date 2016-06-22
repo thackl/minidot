@@ -11,17 +11,20 @@ cd "$(dirname "$DIR")"
 DIR="$(pwd)/"
 popd > /dev/null
 
-# todo check_bin
-# todo minimap opts
-PAF=minidot.paf
-TFA=minidot.fa
-TLEN=minidot.len
+# TODO: check_bin
+
+# TODO: read opts
+MMOPT='-g 100 -k 12 -w 5'
+OPRE=minidot
+
+# files
+PAF=$PRE.paf
+TFA=$PRE.fa
+TLEN=$PRE.len
 
 echo -n '' >$PAF;
 echo -n '' >$TFA;
 echo -n '' >$TLEN;
-
-MMOPT='-g 100 -k 12 -w 5'
 
 # single fasta - assume one contig per sample
 if [[ -z $2 ]]; then
@@ -47,7 +50,7 @@ else  # multiple fasta - each file is a sample
         rm $FA.fai
     done;
 
-    minimap $MMOPT $TFA $TFA >> $PAF 
+    minimap $MMOPT $TFA $TFA >> $PAF
 fi;
-    
+
 "$DIR"/../R/minidot.R $PAF $TLEN
