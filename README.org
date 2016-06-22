@@ -1,0 +1,2 @@
+minidot - quickly generate pretty dotplots from minimap mappings using R and
+ggplot.
