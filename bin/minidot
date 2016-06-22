@@ -1,5 +1,36 @@
 #!/usr/bin/env bash
 
+## subs
+usage(){
+cat <<EOF
+Usage:
+  minidot [OPTS] FASTA [FASTA ..]
+
+Compute and plot dotplots.
+  -o  output prefix [minidot]
+  -M  mapper pass-through options, quote!
+  -m  mapper [minimap]
+
+single FASTA: run all-vs-all sequences.
+multiple FASTA: run all-vs-all FASTA.
+
+EOF
+exit 0;
+}
+
+check_bin(){
+    if [[ $1 == */* ]]; then
+        [ -x $1 ] || { echo "$1 not found or executable" >&2; exit 1; }
+    else
+        hash $1 || { echo "$1 required in PATH" >&2; exit 1; }
+    fi;
+    echo $1 .. ok
+}
+
+# parse args
+[[ -z $1 ]] && usage;
+
+# get dir
 # ugly, but it works for Brian in the bbmap package
 pushd . > /dev/null
 DIR="${BASH_SOURCE[0]}"
@@ -11,11 +42,14 @@ cd "$(dirname "$DIR")"
 DIR="$(pwd)/"
 popd > /dev/null
 
-# TODO: check_bin
-
 # TODO: read opts
-MMOPT='-g 100 -k 12 -w 5'
+MBIN=minimap
+MOPT='-g 100 -k 12 -w 5' # TODO: reset if not minimap
 OPRE=minidot
+
+# check_bin
+check_bin $MBIN
+check_bin samtools
 
 # files
 PAF=$PRE.paf
@@ -26,8 +60,10 @@ echo -n '' >$PAF;
 echo -n '' >$TFA;
 echo -n '' >$TLEN;
 
-# single fasta - assume one contig per sample
+
+
 if [[ -z $2 ]]; then
+    # single fasta - assume one contig per sample
     FA=$1;
     ID=$(basename $FA);
     ID=${ID%.f*};
@@ -36,7 +72,10 @@ if [[ -z $2 ]]; then
     rm $FA.fai
 
     minimap $MMOPT $1 $1 >> $PAF
-else  # multiple fasta - each file is a sample
+
+
+else
+    # multiple fasta - each file is a sample
     # merge fastas
 
     for FA in $@; do
