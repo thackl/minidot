@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Thomas Hackl, thackl@lim4.de
+# Version: 0.1.0
 
 ## subs
 usage(){
@@ -10,6 +12,8 @@ Compute and plot dotplots.
   -o  output prefix [minidot]
   -M  mapper pass-through options, quote!
   -m  mapper [minimap]
+  -h  show help
+  -V  show version
 
 single FASTA: run all-vs-all sequences.
 multiple FASTA: run all-vs-all FASTA.
@@ -27,8 +31,9 @@ check_bin(){
     echo $1 .. ok
 }
 
-# parse args
-[[ -z $1 ]] && usage;
+
+## prep
+[[ $# -eq 0 ]] && usage;
 
 # get dir
 # ugly, but it works for Brian in the bbmap package
@@ -42,23 +47,70 @@ cd "$(dirname "$DIR")"
 DIR="$(pwd)/"
 popd > /dev/null
 
-# TODO: read opts
+SCRIPT=$(basename ${BASH_SOURCE})
+
+# Execute getopt
+ARGS=`getopt --name "$SCRIPT" \
+    --options "o:M:m:hV" \
+    -- "$@"`
+
+# Bad arguments
+[ $? -ne 0 ] && exit 1;
+
+# A little magic
+eval set -- "$ARGS"
+
+# defaults
 MBIN=minimap
 MOPT='-g 100 -k 12 -w 5' # TODO: reset if not minimap
 OPRE=minidot
+
+# Now go through all the options
+while true; do
+    case "$1" in
+        -o)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            OPRE=$2;
+            shift 2;;
+        -M)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            MBIN=$2;
+            shift 2;;
+        -m)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            MOPT=$2;
+            shift 2;;
+        -h)
+            usage && exit 0;;
+        -V)
+            grep -m1 '^# Version' "$DIR"/$SCRIPT | sed "s/.*Version:\s*/$SCRIPT-/";
+            exit 0;;
+        --)
+            shift
+            break;;
+        *)
+            echo "$1: Unknown option" 1>&2 && exit 1;;
+    esac
+done
+
+
+## check for args
+[[ $# -eq 0 ]] && usage;
 
 # check_bin
 check_bin $MBIN
 check_bin samtools
 
 # files
-PAF=$PRE.paf
-TFA=$PRE.fa
-TLEN=$PRE.len
+PAF=$OPRE.paf
+TFA=$OPRE.fa
+TLEN=$OPRE.len
+TML=$OPRE.log # temp mapper log
 
 echo -n '' >$PAF;
 echo -n '' >$TFA;
 echo -n '' >$TLEN;
+echo -n '' >$TML;
 
 
 
