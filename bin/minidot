@@ -71,9 +71,8 @@ if [[ -z $2 ]]; then
     cut -f 1,2 $FA.fai > $TLEN;
     rm $FA.fai
 
-    minimap $MMOPT $1 $1 >> $PAF
-
-
+    echo 'mapping' >&2
+    $MBIN $MOPT $1 $1 >> $PAF
 else
     # multiple fasta - each file is a sample
     # merge fastas
@@ -89,7 +88,12 @@ else
         rm $FA.fai
     done;
 
-    minimap $MMOPT $TFA $TFA >> $PAF
+    echo 'mapping' >&2
+    $MBIN $MOPT $TFA $TFA >> $PAF
 fi;
 
+echo 'plotting' >&2;
+
 "$DIR"/../R/minidot.R $PAF $TLEN
+
+echo "plot at $OPRE.pdf"
