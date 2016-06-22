@@ -32,8 +32,8 @@ library(scales)
 library(stringr)
 
 args = commandArgs(trailingOnly=TRUE)
-if (length(args)==0) {
-  stop("At least one argument must be supplied (input file).n", call.=FALSE)
+if (length(args)<1) {
+  stop("Usage: ./minidot.R PAF LEN [OUT]", call.=FALSE)
 }
 
 ## debug
@@ -43,6 +43,7 @@ if (length(args)==0) {
 ## * read paf and len
 paf <- read.table(args[1])
 len <- read.table(args[2]) #, stringAsFactor=FALSE)
+pdf.file <- if (length(args)==3) args[3] else "minidot.pdf"
 
 #paf$V1 <- factor(paf$V1, levels=len$V1)
 #paf$V6 <- factor(paf$V6, levels=len$V1)
@@ -104,4 +105,4 @@ gg <- gg + facet_wrap(~ava, ncol=samples.n, drop=FALSE)
 #gg <- gg + facet_grid(V1~V6, drop=FALSE)
 
 
-ggsave('minidot.pdf', plot=gg, width=samples.n*2, height=samples.n*2)
+ggsave(pdf.file, plot=gg, width=samples.n*2, height=samples.n*2)

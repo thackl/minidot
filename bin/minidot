@@ -164,6 +164,6 @@ else
 fi;
 
 logs plotting;
-"$DIR"/../R/minidot.R $PAF $TLEN
+"$DIR"/../R/minidot.R $PAF $TLEN $OPRE.pdf
 [ $? -ne 0 ] && { loge failed; exit 1; }
 loge "done ($OPRE.pdf)"
