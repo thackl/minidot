@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+# ugly, but it works for Brian in the bbmap package
+pushd . > /dev/null
+DIR="${BASH_SOURCE[0]}"
+while [ -h "$DIR" ]; do
+  cd "$(dirname "$DIR")"
+  DIR="$(readlink "$(basename "$DIR")")"
+done
+cd "$(dirname "$DIR")"
+DIR="$(pwd)/"
+popd > /dev/null
+
+# todo check_bin
+# todo minimap opts
+PAF=minidot.paf
+TFA=minidot.fa
+TLEN=minidot.len
+
+echo -n '' >$PAF;
+echo -n '' >$TFA;
+echo -n '' >$TLEN;
+
+MMOPT='-g 100 -k 12 -w 5'
+
+# single fasta - assume one contig per sample
+if [[ -z $2 ]]; then
+    FA=$1;
+    ID=$(basename $FA);
+    ID=${ID%.f*};
+    samtools faidx $FA; # lengths of contigs
+    cut -f 1,2 $FA.fai > $TLEN;
+    rm $FA.fai
+
+    minimap $MMOPT $1 $1 >> $PAF
+else  # multiple fasta - each file is a sample
+    # merge fastas
+
+    for FA in $@; do
+        ID=$(basename $FA);
+        ID=${ID%.f*};
+        # ID=${ID/[:\/]/_}; # need : for split in R
+        echo $ID;
+        (echo ">$ID"; grep -v '^>' $FA | tr -d '\n' | fold; echo '') >> $TFA;
+        samtools faidx $FA; # lengths of contigs
+        cut -f 2 $FA.fai | sed 's/.*/'$ID'\t&/' >> $TLEN;
+        rm $FA.fai
+    done;
+
+    minimap $MMOPT $TFA $TFA >> $PAF 
+fi;
+    
+"$DIR"/../R/minidot.R $PAF $TLEN
