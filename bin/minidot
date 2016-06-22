@@ -22,13 +22,24 @@ EOF
 exit 0;
 }
 
+log(){
+    echo [$(date +"%T")] $@ >&2
+}
+logs(){
+    echo -n [$(date +"%T")] $@ .. >&2
+}
+loge(){
+    echo " "$@ >&2
+}
+
 check_bin(){
+    logs $1
     if [[ $1 == */* ]]; then
-        [ -x $1 ] || { echo "$1 not found or executable" >&2; exit 1; }
+        [ -x $1 ] || { loge failed; log "$1 not found or executable"; exit 1; }
     else
-        hash $1 || { echo "$1 required in PATH" >&2; exit 1; }
+        hash $1 || { loge failed; log "$1 required in PATH"; exit 1; }
     fi;
-    echo $1 .. ok
+    loge ok
 }
 
 
@@ -123,29 +134,36 @@ if [[ -z $2 ]]; then
     cut -f 1,2 $FA.fai > $TLEN;
     rm $FA.fai
 
-    echo 'mapping' >&2
-    $MBIN $MOPT $1 $1 >> $PAF
+    logs mapping
+    $MBIN $MOPT $1 $1 >> $PAF 2>> $TML;
+    [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
+    loge done
+
 else
     # multiple fasta - each file is a sample
     # merge fastas
 
+    logs prepping
     for FA in $@; do
         ID=$(basename $FA);
         ID=${ID%.f*};
         # ID=${ID/[:\/]/_}; # need : for split in R
-        echo $ID;
         (echo ">$ID"; grep -v '^>' $FA | tr -d '\n' | fold; echo '') >> $TFA;
         samtools faidx $FA; # lengths of contigs
         cut -f 2 $FA.fai | sed 's/.*/'$ID'\t&/' >> $TLEN;
         rm $FA.fai
     done;
+    [ $? -ne 0 ] && { loge failed; exit 1; }
+    loge done;
 
-    echo 'mapping' >&2
-    $MBIN $MOPT $TFA $TFA >> $PAF
+    logs mapping
+    $MBIN $MOPT $TFA $TFA >> $PAF 2>> $TML;
+    [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
+    loge done
+
 fi;
 
-echo 'plotting' >&2;
-
+logs plotting;
 "$DIR"/../R/minidot.R $PAF $TLEN
-
-echo "plot at $OPRE.pdf"
+[ $? -ne 0 ] && { loge failed; exit 1; }
+loge "done ($OPRE.pdf)"
