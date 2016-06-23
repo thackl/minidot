@@ -12,6 +12,7 @@ Compute and plot dotplots.
   -o  output prefix [minidot]
   -M  mapper pass-through options, quote!
   -m  mapper [minimap]
+  -s  include self comp. for multiple sets
   -h  show help
   -V  show version
 
@@ -62,7 +63,7 @@ SCRIPT=$(basename ${BASH_SOURCE})
 
 # Execute getopt
 ARGS=`getopt --name "$SCRIPT" \
-    --options "o:M:m:hV" \
+    --options "o:M:m:shV" \
     -- "$@"`
 
 # Bad arguments
@@ -75,6 +76,7 @@ eval set -- "$ARGS"
 MBIN=minimap
 MOPT='-g 100 -k 12 -w 5' # TODO: reset if not minimap
 OPRE=minidot
+SELF='-S'
 
 # Now go through all the options
 while true; do
@@ -91,6 +93,9 @@ while true; do
             [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
             MOPT=$2;
             shift 2;;
+        -s)
+            SELF='';
+            shift;;
         -h)
             usage && exit 0;;
         -V)
@@ -116,7 +121,8 @@ check_bin samtools
 PAF=$OPRE.paf
 TFA=$OPRE.fa
 TLEN=$OPRE.len
-TML=$OPRE.log # temp mapper log
+TML=$OPRE-map.log # temp mapper log
+TRL=$OPRE-plot.log # temp mapper log
 
 echo -n '' >$PAF;
 echo -n '' >$TFA;
@@ -163,7 +169,7 @@ else
 
 fi;
 
-logs plotting;
-"$DIR"/../R/minidot.R $PAF $TLEN $OPRE.pdf
-[ $? -ne 0 ] && { loge failed; exit 1; }
-loge "done ($OPRE.pdf)"
+log plotting;
+"$DIR"/../R/minidot.R $SELF -i $PAF -l $TLEN -o $OPRE.pdf # R messages to fule
+[ $? -ne 0 ] && { loge failed; >&2; exit 1; }
+log " .. done ($OPRE.pdf)"
