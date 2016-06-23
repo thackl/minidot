@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Author: Thomas Hackl, thackl@lim4.de
-# Version: 0.2.0
+# Version: 0.4.0
 
 ## subs
 usage(){
@@ -10,8 +10,9 @@ Usage:
 
 Compute and plot dotplots.
   -o  output prefix [minidot]
-  -M  mapper pass-through options, quote!
-  -m  mapper [minimap]
+  -M  mapper [minimap]
+  -m  mapper mode: fast, sensitive, auto (dep. on input size)
+       or pass-through parameters as quoted string
   -s  include self comp. for multiple sets
   -h  show help
   -V  show version
@@ -27,14 +28,14 @@ log(){
     echo [$(date +"%T")] $@ >&2
 }
 logs(){
-    echo -n [$(date +"%T")] $@ .. >&2
+    echo -n [$(date +"%T")] $@ >&2
 }
 loge(){
     echo " "$@ >&2
 }
 
 check_bin(){
-    logs $1
+    logs $1 ..
     if [[ $1 == */* ]]; then
         [ -x $1 ] || { loge failed; log "$1 not found or executable"; exit 1; }
     else
@@ -42,6 +43,19 @@ check_bin(){
     fi;
     loge ok
 }
+
+mode2opts(){
+    if [ "$MOPT" == 'auto' ]; then
+        LSUM=$(awk '{sum+=$2} END {print sum}' <$TLEN)
+        [ "$LSUM" -gt 50000000 ] && MOPT='fast' || MOPT='sensitive'
+    fi;
+
+    logs mode: "$MOPT ($LSUM bp)"
+    [ "$MOPT" == 'fast' ] && MOPT='-L 500 -c 15'
+    [ "$MOPT" == 'sensitive' ] && MOPT='-g 100 -k 12 -w 5'
+    loge '"'"$MOPT"'"'
+}
+
 
 
 ## prep
@@ -74,7 +88,7 @@ eval set -- "$ARGS"
 
 # defaults
 MBIN=minimap
-MOPT='-g 100 -k 12 -w 5' # TODO: reset if not minimap
+MOPT='auto' # TODO: reset if not minimap
 OPRE=minidot
 SELF='-S'
 
@@ -140,7 +154,9 @@ if [[ -z $2 ]]; then
     cut -f 1,2 $FA.fai > $TLEN;
     rm $FA.fai
 
-    logs mapping
+    mode2opts
+
+    logs mapping ..
     $MBIN $MOPT $1 $1 >> $PAF 2>> $TML;
     [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
     loge done
@@ -149,7 +165,7 @@ else
     # multiple fasta - each file is a sample
     # merge fastas
 
-    logs prepping
+    logs prepping ..
     for FA in $@; do
         ID=$(basename $FA);
         ID=${ID%.f*};
@@ -162,7 +178,9 @@ else
     [ $? -ne 0 ] && { loge failed; exit 1; }
     loge done;
 
-    logs mapping
+    mode2opts
+
+    logs mapping ..
     $MBIN $MOPT $TFA $TFA >> $PAF 2>> $TML;
     [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
     loge done
