@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# Author: Thomas Hackl, thackl@lim4.de
+# Version: 0.2.0
+
+## subs
+usage(){
+cat <<EOF
+Usage:
+  minidot [OPTS] FASTA [FASTA ..]
+
+Compute and plot dotplots.
+  -o  output prefix [minidot]
+  -M  mapper pass-through options, quote!
+  -m  mapper [minimap]
+  -h  show help
+  -V  show version
+
+single FASTA: run all-vs-all sequences.
+multiple FASTA: run all-vs-all FASTA.
+
+EOF
+exit 0;
+}
+
+log(){
+    echo [$(date +"%T")] $@ >&2
+}
+logs(){
+    echo -n [$(date +"%T")] $@ .. >&2
+}
+loge(){
+    echo " "$@ >&2
+}
+
+check_bin(){
+    logs $1
+    if [[ $1 == */* ]]; then
+        [ -x $1 ] || { loge failed; log "$1 not found or executable"; exit 1; }
+    else
+        hash $1 || { loge failed; log "$1 required in PATH"; exit 1; }
+    fi;
+    loge ok
+}
+
+
+## prep
+[[ $# -eq 0 ]] && usage;
+
+# get dir
+# ugly, but it works for Brian in the bbmap package
+pushd . > /dev/null
+DIR="${BASH_SOURCE[0]}"
+while [ -h "$DIR" ]; do
+  cd "$(dirname "$DIR")"
+  DIR="$(readlink "$(basename "$DIR")")"
+done
+cd "$(dirname "$DIR")"
+DIR="$(pwd)/"
+popd > /dev/null
+
+SCRIPT=$(basename ${BASH_SOURCE})
+
+# Execute getopt
+ARGS=`getopt --name "$SCRIPT" \
+    --options "o:M:m:hV" \
+    -- "$@"`
+
+# Bad arguments
+[ $? -ne 0 ] && exit 1;
+
+# A little magic
+eval set -- "$ARGS"
+
+# defaults
+MBIN=minimap
+MOPT='-g 100 -k 12 -w 5' # TODO: reset if not minimap
+OPRE=minidot
+
+# Now go through all the options
+while true; do
+    case "$1" in
+        -o)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            OPRE=$2;
+            shift 2;;
+        -M)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            MBIN=$2;
+            shift 2;;
+        -m)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            MOPT=$2;
+            shift 2;;
+        -h)
+            usage && exit 0;;
+        -V)
+            grep -m1 '^# Version' "$DIR"/$SCRIPT | sed "s/.*Version:\s*/$SCRIPT-/";
+            exit 0;;
+        --)
+            shift
+            break;;
+        *)
+            echo "$1: Unknown option" 1>&2 && exit 1;;
+    esac
+done
+
+
+## check for args
+[[ $# -eq 0 ]] && usage;
+
+# check_bin
+check_bin $MBIN
+check_bin samtools
+
+# files
+PAF=$OPRE.paf
+TFA=$OPRE.fa
+TLEN=$OPRE.len
+TML=$OPRE.log # temp mapper log
+
+echo -n '' >$PAF;
+echo -n '' >$TFA;
+echo -n '' >$TLEN;
+echo -n '' >$TML;
+
+
+
+if [[ -z $2 ]]; then
+    # single fasta - assume one contig per sample
+    FA=$1;
+    ID=$(basename $FA);
+    ID=${ID%.f*};
+    samtools faidx $FA; # lengths of contigs
+    cut -f 1,2 $FA.fai > $TLEN;
+    rm $FA.fai
+
+    logs mapping
+    $MBIN $MOPT $1 $1 >> $PAF 2>> $TML;
+    [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
+    loge done
+
+else
+    # multiple fasta - each file is a sample
+    # merge fastas
+
+    logs prepping
+    for FA in $@; do
+        ID=$(basename $FA);
+        ID=${ID%.f*};
+        # ID=${ID/[:\/]/_}; # need : for split in R
+        (echo ">$ID"; grep -v '^>' $FA | tr -d '\n' | fold; echo '') >> $TFA;
+        samtools faidx $FA; # lengths of contigs
+        cut -f 2 $FA.fai | sed 's/.*/'$ID'\t&/' >> $TLEN;
+        rm $FA.fai
+    done;
+    [ $? -ne 0 ] && { loge failed; exit 1; }
+    loge done;
+
+    logs mapping
+    $MBIN $MOPT $TFA $TFA >> $PAF 2>> $TML;
+    [ $? -ne 0 ] && { loge failed; cat $TML >&2; exit 1; }
+    loge done
+
+fi;
+
+logs plotting;
+"$DIR"/../R/minidot.R $PAF $TLEN $OPRE.pdf
+[ $? -ne 0 ] && { loge failed; exit 1; }
+loge "done ($OPRE.pdf)"
