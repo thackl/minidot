@@ -58,45 +58,59 @@ paf$idy <- paf$V10 / paf$V11 * paf$strand
 
 len.cum <- cbind(len, cumsum=c(lapply(split(len, len$V1),
                function(x) cumsum(x$V2)), recursive=T))
-yava <- data.frame(ava=character(0), yi=numeric(0))
-xava <- data.frame(ava=character(0), xi=numeric(0))
-yava.rt <- data.frame(ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
-xava.rt <- data.frame(ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+yava <- data.frame(V1=character(0), V6=character(0), ava=character(0), yi=numeric(0))
+xava <- data.frame(V1=character(0), V6=character(0), ava=character(0), xi=numeric(0))
+yava.rt <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+xava.rt <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+
+ava.bg <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
 
 for(i in unique(paf$ava)){
     r <- str_split_fixed(i, ":", 2)
     yi <- c(0,len.cum$cumsum[len.cum$V1==r[2]])
+    yi.max <- yi[length(yi)]
     xi <- c(0,len.cum$cumsum[len.cum$V1==r[1]])
+    xi.max <- xi[length(xi)]
 
     yi.even <- if (length(yi) %% 2) yi[-length(yi)] else yi
     xi.even <- if (length(xi) %% 2) xi[-length(xi)] else xi
-    
+
     ## odd or even
     yi.mt <- matrix(yi.even, ncol=2, byrow=T)
     xi.mt <- matrix(xi.even, ncol=2, byrow=T)
 
-   
-    yava <- rbind(yava, data.frame(ava=i, yi=yi))
+
+    ava.bg <- rbind(ava.bg, data.frame(ava=i, V1=r[1], V6=r[2],
+                         xmin=xi.max * -0.01, xmax=xi.max*1.01,
+                         ymin=yi.max * -0.01, ymax=yi.max*1.01))
+
+    yava <- rbind(yava, data.frame(ava=i, yi=yi, V1=r[1], V6=r[2]))
     yava.rt <- rbind(yava.rt, data.frame(ava=i,
-                         xmin=-Inf, xmax=Inf,
+                         V1=r[1], V6=r[2],
+                         xmin=0, xmax=xi.max,
                          ymin=yi.mt[,1], ymax=yi.mt[,2]))
-    xava <- rbind(xava, data.frame(ava=i, xi=xi))
+    xava <- rbind(xava, data.frame(ava=i, xi=xi, V1=r[1], V6=r[2]))
     xava.rt <- rbind(xava.rt, data.frame(ava=i,
+                         V1=r[1], V6=r[2],
                          xmin=xi.mt[,1], xmax=xi.mt[,2],
-                         ymin=-Inf, ymax=Inf))
+                         ymin=0, ymax=yi.max))
 }
 
+## * plot
+
 gg <- ggplot(paf)
-gg <- gg + geom_rect(data=xava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="grey75", alpha=0.5)
-gg <- gg + geom_rect(data=yava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="grey75", alpha=0.5)
-gg <- gg + geom_segment(aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=1.5)
-#gg <- gg + geom_vline(xava, aes(xintercept=xi), size=.1)
-#gg <- gg + geom_hline(yava, aes(yintercept=yi), size=.1)
+#gg <- gg + geom_rect(data=xava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="green", alpha=0.5)
+#gg <- gg + geom_rect(data=yava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="red", alpha=0.5)
+
+gg <- gg + geom_rect(data=ava.bg, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="grey32")
+gg <- gg + geom_vline(data=xava, aes(xintercept=xi), size=.1, color="white", linetype = 2)
+gg <- gg + geom_hline(data=yava, aes(yintercept=yi), size=.1, color="white", linetype = 2)
+gg <- gg + geom_segment(data=paf, aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=.3, lineend = "round")
 gg <- gg + scale_colour_distiller(palette="Spectral", direction=1)
 gg <- gg + coord_fixed(1) + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "grey55")
+    panel.background = element_rect(fill = "white")
 )
 
 gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
