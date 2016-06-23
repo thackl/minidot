@@ -51,9 +51,11 @@ args <- parser$parse_args()
 paf <- read.table(args$i)
 len <- read.table(args$l) #, stringAsFactor=FALSE)
 
-len$V1 <- factor(len$V1, levels=len$V1)
-paf$V1 <- factor(paf$V1, levels=len$V1)
-paf$V6 <- factor(paf$V6, levels=len$V1)
+sets <- unique(len$V1)
+
+len$V1 <- factor(len$V1, levels=sets)
+paf$V1 <- factor(paf$V1, levels=sets)
+paf$V6 <- factor(paf$V6, levels=sets)
 
 if(args$no_self){
     sets.n <- length(unique(paf$V1))
