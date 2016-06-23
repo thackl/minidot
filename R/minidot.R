@@ -39,6 +39,7 @@ parser$add_argument("-l", required=TRUE, metavar="LEN", help="per set sequence l
 parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output file, .pdf/.png")
 parser$add_argument("-S", "--no-self", action="store_true", default=FALSE, help="exclude plots of set against itself")
 parser$add_argument("--title", help="plot title")
+parser$add_argument("--theme", default="dark", help="themes: dark, light. [dark]")
 
 args <- parser$parse_args()
 
@@ -123,15 +124,27 @@ gg <- ggplot(paf)
 #gg <- gg + geom_rect(data=xava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="green", alpha=0.5)
 #gg <- gg + geom_rect(data=yava.rt, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="red", alpha=0.5)
 
-gg <- gg + geom_rect(data=ava.bg, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill="grey32")
-gg <- gg + geom_vline(data=xava, aes(xintercept=xi), size=.1, color="white", linetype = 2)
-gg <- gg + geom_hline(data=yava, aes(yintercept=yi), size=.1, color="white", linetype = 2)
-gg <- gg + geom_segment(data=paf, aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=.3, lineend = "round")
-gg <- gg + scale_colour_distiller(palette="Spectral", direction=1)
+if (args$theme=="dark"){
+    col.fill <- "grey20"
+    col.line <- "grey50"
+}else if (args$theme=="light"){
+    col.fill <- "white"
+    col.line <- "grey20"
+}
+
+gg <- gg + geom_rect(data=ava.bg, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill=col.fill)
+gg <- gg + geom_vline(data=xava, aes(xintercept=xi), size=.1, color=col.line, linetype = 2)
+gg <- gg + geom_hline(data=yava, aes(yintercept=yi), size=.1, color=col.line, linetype = 2)
+gg <- gg + geom_segment(data=paf, aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=.4, lineend = "round")
+if (args$theme=="dark") gg <- gg + scale_colour_distiller(palette="Spectral", direction=1)
+if (args$theme=="light") gg <- gg + scale_colour_gradientn(colours = c("#d60004", "#e8ae00", "#666666", "#666666", "#19bf5e", "#1701d2"))
+
 gg <- gg + coord_fixed(1) + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "white")
+    panel.background = element_rect(fill = "white"),
+    axis.title.x=element_blank(),
+    axis.title.y=element_blank()
 )
 
 gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
