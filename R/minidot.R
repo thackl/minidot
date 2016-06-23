@@ -54,6 +54,7 @@ parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output fil
 parser$add_argument("-S", "--no-self", action="store_true", default=FALSE, help="exclude plots of set against itself")
 parser$add_argument("--title", help="plot title")
 parser$add_argument("--theme", default="dark", help="themes: dark, light. [dark]")
+parser$add_argument("--width", default=20, help="plot width (cm)")
 
 args <- parser$parse_args()
 
@@ -71,8 +72,9 @@ len$V1 <- factor(len$V1, levels=sets)
 paf$V1 <- factor(paf$V1, levels=sets)
 paf$V6 <- factor(paf$V6, levels=sets)
 
+sets.n <- length(unique(paf$V1))
+
 if(args$no_self){
-    sets.n <- length(unique(paf$V1))
     if (sets.n > 1){
         paf<-paf[!paf$V1==paf$V6,]
         if(sets.n == 2){
@@ -143,7 +145,7 @@ if (args$theme=="light") gg <- gg + scale_colour_gradientn("Identity", colours =
 gg <- gg + coord_fixed(1) + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "white"),
+    panel.background = element_rect(fill = "grey92"),
     axis.title.x=element_blank(),
     axis.title.y=element_blank()
 )
@@ -154,4 +156,13 @@ gg <- gg + facet_grid(V6~V1, drop=TRUE, as.table=FALSE)
 
 if (!is.null(args$title)) gg <- gg + ggtitle(args$title)
 
-ggsave(args$o, plot=gg, width=12)
+# adjust width for direct compare of two set with different genome length
+plot.height = args$width -2 # assume square plot, but leave some extra room for legend
+if (sets.n == 2 && args$no_self) {
+    x <- ava.bg$xmax
+    y <- ava.bg$ymax
+    bp.width <- args$width/x
+    plot.height <- ava.bg$ymax * bp.width - ifelse(x > y, 0, 8)
+}
+
+ggsave(args$o, plot=gg, width=args$width, height=plot.height, units="cm")

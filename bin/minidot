@@ -132,6 +132,9 @@ check_bin $MBIN
 check_bin samtools
 
 # files
+OSUF="${OPRE##*.}"
+[ "$OSUF" == "$OPRE" ] && OSUF=pdf
+OPRE="${OPRE%.*}"
 PAF=$OPRE.paf
 TFA=$OPRE.fa
 TLEN=$OPRE.len
@@ -188,6 +191,6 @@ else
 fi;
 
 log plotting;
-"$DIR"/../R/minidot.R $SELF -i $PAF -l $TLEN -o $OPRE.pdf # R messages to fule
+"$DIR"/../R/minidot.R $SELF -i $PAF -l $TLEN -o $OPRE.$OSUF # R messages to fule
 [ $? -ne 0 ] && { loge failed; >&2; exit 1; }
-log " .. done ($OPRE.pdf)"
+log " .. done ($OPRE.$OSUF)"
