@@ -30,6 +30,20 @@ library(stringr)
 library(argparse)
 library(proto)
 
+## * aux
+humanize_format <- function(...) {
+    function(x) humanize(x, ...)
+}
+
+humanize <- function(x, digits=2, sep=" ", unit="bp"){
+  pre <- c("","k","M","G","T");
+  px <- as.integer(ifelse(x > 0, log10(x)/3, 0))
+  v <- signif(x/(10^(px*3)), digits=digits)
+  pre[!pre==''] <- paste(sep, pre[!pre==''], sep='')
+  return(paste(v, pre[px+1], unit, sep=""))
+}
+
+
 ## * read args/input
 parser <- ArgumentParser()
 
@@ -149,8 +163,8 @@ gg <- gg + coord_fixed(1) + theme(
     axis.title.y=element_blank()
 )
 
-gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
-gg <- gg + scale_y_continuous(label=scientific_format(digits=0), expand=c(0,0))
+gg <- gg + scale_x_continuous(label=humanize_format(unit='',sep=''), expand=c(0,0))
+gg <- gg + scale_y_continuous(label=humanize_format(unit='',sep=''), expand=c(0,0))
 gg <- gg + facet_grid(V6~V1, drop=TRUE, as.table=FALSE)
 
 if (!is.null(args$title)) gg <- gg + ggtitle(args$title)
