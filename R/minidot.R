@@ -28,6 +28,7 @@ library(ggplot2)
 library(scales)
 library(stringr)
 library(argparse)
+library(proto)
 
 ## * read args/input
 parser <- ArgumentParser()
@@ -36,6 +37,7 @@ parser <- ArgumentParser()
 parser$add_argument("-i", required=TRUE, metavar="PAF", help="supported formats: paf")
 parser$add_argument("-l", required=TRUE, metavar="LEN", help="per set sequence lengths")
 parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output file, .pdf/.png")
+parser$add_argument("-S", "--no-self", action="store_true", default=FALSE, help="exclude plots of set against itself")
 parser$add_argument("--title", help="plot title")
 
 args <- parser$parse_args()
@@ -49,9 +51,24 @@ paf <- read.table(args$i)
 len <- read.table(args$l) #, stringAsFactor=FALSE)
 
 len$V1 <- factor(len$V1, levels=len$V1)
-
 paf$V1 <- factor(paf$V1, levels=len$V1)
 paf$V6 <- factor(paf$V6, levels=len$V1)
+
+if(args$no_self){
+    sets.n <- length(unique(paf$V1))
+    if (sets.n > 1){
+        paf<-paf[!paf$V1==paf$V6,]
+        if(sets.n == 2){
+            ## make sure that for two sets, they don't appear in same dimension
+            paf<-paf[paf$V1==paf$V1[1],]
+        }
+    }
+}
+
+if(dim(paf)[1]==0){
+    write("no matches between sets, nothing to plot", stderr())
+    quit(status=1);
+}
 
 paf$ava <- paf$V1:paf$V6
 paf$strand <- ifelse(paf$V5=='+', 1, -1)
@@ -119,7 +136,7 @@ gg <- gg + coord_fixed(1) + theme(
 
 gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
 gg <- gg + scale_y_continuous(label=scientific_format(digits=0), expand=c(0,0))
-gg <- gg + facet_grid(V6~V1, drop=FALSE, as.table=FALSE)
+gg <- gg + facet_grid(V6~V1, drop=TRUE, as.table=FALSE)
 
 if (!is.null(args$title)) gg <- gg + ggtitle(args$title)
 
