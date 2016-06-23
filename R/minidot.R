@@ -96,12 +96,13 @@ paf$idy <- paf$V10 / paf$V11 * paf$strand
 
 len.cum <- cbind(len, cumsum=c(lapply(split(len, len$V1),
                function(x) cumsum(x$V2)), recursive=T))
-yava <- data.frame(V1=character(0), V6=character(0), ava=character(0), yi=numeric(0))
-xava <- data.frame(V1=character(0), V6=character(0), ava=character(0), xi=numeric(0))
-yava.rt <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
-xava.rt <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+yava <- data.frame(V1=character(0), V6=character(0), yi=numeric(0))
+ava.se <- data.frame(V1=character(0), V6=character(0), x=numeric(0), xend=numeric(0), y=numeric(0), yend=numeric(0))
+xava <- data.frame(V1=character(0), V6=character(0), xi=numeric(0))
+yava.rt <- data.frame(V1=character(0), V6=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+xava.rt <- data.frame(V1=character(0), V6=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
 
-ava.bg <- data.frame(V1=character(0), V6=character(0), ava=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
+ava.bg <- data.frame(V1=character(0), V6=character(0), xmin=numeric(0), xmax=numeric(0), ymin=numeric(0), ymax=numeric(0))
 
 for(i in unique(paf$ava)){
     r <- str_split_fixed(i, ":", 2)
@@ -110,28 +111,12 @@ for(i in unique(paf$ava)){
     xi <- c(0,len.cum$cumsum[len.cum$V1==r[1]])
     xi.max <- xi[length(xi)]
 
-    yi.even <- if (length(yi) %% 2) yi[-length(yi)] else yi
-    xi.even <- if (length(xi) %% 2) xi[-length(xi)] else xi
-
-    ## odd or even
-    yi.mt <- matrix(yi.even, ncol=2, byrow=T)
-    xi.mt <- matrix(xi.even, ncol=2, byrow=T)
-
-
-    ava.bg <- rbind(ava.bg, data.frame(ava=i, V1=r[1], V6=r[2],
+    ava.bg <- rbind(ava.bg, data.frame(V1=r[1], V6=r[2],
                          xmin=xi.max * -0.01, xmax=xi.max*1.01,
                          ymin=yi.max * -0.01, ymax=yi.max*1.01))
 
-    yava <- rbind(yava, data.frame(ava=i, yi=yi, V1=r[1], V6=r[2]))
-    yava.rt <- rbind(yava.rt, data.frame(ava=i,
-                         V1=r[1], V6=r[2],
-                         xmin=0, xmax=xi.max,
-                         ymin=yi.mt[,1], ymax=yi.mt[,2]))
-    xava <- rbind(xava, data.frame(ava=i, xi=xi, V1=r[1], V6=r[2]))
-    xava.rt <- rbind(xava.rt, data.frame(ava=i,
-                         V1=r[1], V6=r[2],
-                         xmin=xi.mt[,1], xmax=xi.mt[,2],
-                         ymin=0, ymax=yi.max))
+    ava.se <- rbind(ava.se, data.frame(V1=r[1], V6=r[2],  y=yi, yend=yi, x=0, xend=xi.max))
+    ava.se <- rbind(ava.se, data.frame(V1=r[1], V6=r[2],  y=0, yend=yi.max, x=xi, xend=xi))
 }
 
 ## * plot
@@ -149,8 +134,7 @@ if (args$theme=="dark"){
 }
 
 gg <- gg + geom_rect(data=ava.bg, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), fill=col.fill)
-gg <- gg + geom_vline(data=xava, aes(xintercept=xi), size=.1, color=col.line, linetype = 2)
-gg <- gg + geom_hline(data=yava, aes(yintercept=yi), size=.1, color=col.line, linetype = 2)
+gg <- gg + geom_segment(data=ava.se, aes(x=x,xend=xend,y=y,yend=yend), size=.1, color=col.line, linetype = 3)
 gg <- gg + geom_segment(data=paf, aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=.4, lineend = "round")
 
 if (args$theme=="dark") gg <- gg + scale_colour_distiller("Identity", palette="Spectral", direction=1)
@@ -170,5 +154,4 @@ gg <- gg + facet_grid(V6~V1, drop=TRUE, as.table=FALSE)
 
 if (!is.null(args$title)) gg <- gg + ggtitle(args$title)
 
-ggsave(args$o, plot=gg, width=10, height=10)
-ggsave(paste(args$o, ".png", sep=""), plot=gg, width=10, height=10)
+ggsave(args$o, plot=gg, width=12)
