@@ -1,9 +1,8 @@
 #!/usr/bin/env Rscript
 ## Read minimap .paf files and generate a-v-a dotplots
 
-
 ## * minimap OUTPUT FORMAT
-## 
+##
 ## Minimap outputs mapping positions in the Pairwise mApping Format (PAF). PAF
 ## is a TAB-delimited text format with each line consisting of at least 12
 ## fields as are described in the following table:
@@ -45,13 +44,17 @@ paf <- read.table(args[1])
 len <- read.table(args[2]) #, stringAsFactor=FALSE)
 pdf.file <- if (length(args)==3) args[3] else "minidot.pdf"
 
-#paf$V1 <- factor(paf$V1, levels=len$V1)
-#paf$V6 <- factor(paf$V6, levels=len$V1)
+len$V1 <- factor(len$V1, levels=len$V1)
+
+paf$V1 <- factor(paf$V1, levels=len$V1)
+paf$V6 <- factor(paf$V6, levels=len$V1)
 
 paf$ava <- paf$V1:paf$V6
 paf$strand <- ifelse(paf$V5=='+', 1, -1)
 paf[paf$strand==-1,8:9] <- paf[paf$strand==-1,9:8]
 paf$idy <- paf$V10 / paf$V11 * paf$strand
+
+## * map contig boundaries to gglayer
 
 len.cum <- cbind(len, cumsum=c(lapply(split(len, len$V1),
                function(x) cumsum(x$V2)), recursive=T))
@@ -100,9 +103,8 @@ gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
 gg <- gg + scale_y_continuous(label=scientific_format(digits=0), expand=c(0,0))
 
 samples.n <- length(unique(paf$V1))
-gg <- gg + facet_wrap(~ava, ncol=samples.n, drop=FALSE)
-#gg <- gg + facet_grid(V1~V6, drop=FALSE)
-#gg <- gg + facet_grid(V1~V6, drop=FALSE)
+#gg <- gg + facet_wrap(~ava, ncol=samples.n, drop=FALSE)
+gg <- gg + facet_grid(V6~V1, drop=FALSE, as.table=FALSE)
 
-
-ggsave(pdf.file, plot=gg, width=samples.n*2, height=samples.n*2)
+ggsave(pdf.file, plot=gg, width=10, height=10)
+ggsave(paste(pdf.file, ".png", sep=""), plot=gg, width=10, height=10)
