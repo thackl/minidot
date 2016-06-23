@@ -152,8 +152,9 @@ gg <- gg + geom_rect(data=ava.bg, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax
 gg <- gg + geom_vline(data=xava, aes(xintercept=xi), size=.1, color=col.line, linetype = 2)
 gg <- gg + geom_hline(data=yava, aes(yintercept=yi), size=.1, color=col.line, linetype = 2)
 gg <- gg + geom_segment(data=paf, aes(x=V3, xend=V4, y=V8, yend=V9, color=idy), size=.4, lineend = "round")
-if (args$theme=="dark") gg <- gg + scale_colour_distiller(palette="Spectral", direction=1)
-if (args$theme=="light") gg <- gg + scale_colour_gradientn(colours = c("#d60004", "#e8ae00", "#666666", "#666666", "#19bf5e", "#1701d2"))
+
+if (args$theme=="dark") gg <- gg + scale_colour_distiller("Identity", palette="Spectral", direction=1)
+if (args$theme=="light") gg <- gg + scale_colour_gradientn("Identity", colours = c("#d60004", "#e8ae00", "#666666", "#666666", "#19bf5e", "#1701d2"))
 
 gg <- gg + coord_fixed(1) + theme(
     panel.grid.major = element_blank(),
