@@ -24,25 +24,29 @@
 ## │ 12 │  int   │ Mapping quality (0-255 with 255 for missing)                │
 ## └────┴────────┴─────────────────────────────────────────────────────────────┘
 
-## * read args/input
-
 library(ggplot2)
 library(scales)
 library(stringr)
+library(argparse)
 
-args = commandArgs(trailingOnly=TRUE)
-if (length(args)<1) {
-  stop("Usage: ./minidot.R PAF LEN [OUT]", call.=FALSE)
-}
+## * read args/input
+parser <- ArgumentParser()
+
+## -s (hort), --long ...
+parser$add_argument("-i", required=TRUE, metavar="PAF", help="supported formats: paf")
+parser$add_argument("-l", required=TRUE, metavar="LEN", help="per set sequence lengths")
+parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output file, .pdf/.png")
+parser$add_argument("--title", help="plot title")
+
+args <- parser$parse_args()
 
 ## debug
 #setwd("/home/thackl/projects/coding/sandbox/R-minimap-dotplots")
 #args <- c("minidot.paf", "minidot.len");
 
 ## * read paf and len
-paf <- read.table(args[1])
-len <- read.table(args[2]) #, stringAsFactor=FALSE)
-pdf.file <- if (length(args)==3) args[3] else "minidot.pdf"
+paf <- read.table(args$i)
+len <- read.table(args$l) #, stringAsFactor=FALSE)
 
 len$V1 <- factor(len$V1, levels=len$V1)
 
@@ -115,10 +119,9 @@ gg <- gg + coord_fixed(1) + theme(
 
 gg <- gg + scale_x_continuous(label=scientific_format(digits=0), expand=c(0,0))
 gg <- gg + scale_y_continuous(label=scientific_format(digits=0), expand=c(0,0))
-
-samples.n <- length(unique(paf$V1))
-#gg <- gg + facet_wrap(~ava, ncol=samples.n, drop=FALSE)
 gg <- gg + facet_grid(V6~V1, drop=FALSE, as.table=FALSE)
 
-ggsave(pdf.file, plot=gg, width=10, height=10)
-ggsave(paste(pdf.file, ".png", sep=""), plot=gg, width=10, height=10)
+if (!is.null(args$title)) gg <- gg + ggtitle(args$title)
+
+ggsave(args$o, plot=gg, width=10, height=10)
+ggsave(paste(args$o, ".png", sep=""), plot=gg, width=10, height=10)
