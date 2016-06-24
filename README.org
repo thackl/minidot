@@ -1,7 +1,7 @@
 ** minidot
 Quickly produce pretty dotplots from [[https://github.com/lh3/minimap][minimap]] mappings using R/ggplot2.
 
-file:etc/prochlorococcus.png file:etc/arabidopsis.png
+[[etc/prochlorococcus.png]] [[etc/arabidopsis.png]]
 
 **** Dependencies
 - R packages: ggplot2, stringr, scales, argparse
