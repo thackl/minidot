@@ -1,6 +1,10 @@
 ** minidot
 Quickly produce pretty dotplots from [[https://github.com/lh3/minimap][minimap]] mappings using R/ggplot2.
 
+[[etc/prochlorococcus-small.svg]] [[etc/prochlorococcus-small.svg]]
+
+[[Samples][etc/prochlorococcus-small.svg]]
+
 [[etc/prochlorococcus.png]] [[etc/arabidopsis.png]]
 
 **** Dependencies
@@ -11,6 +15,8 @@ Quickly produce pretty dotplots from [[https://github.com/lh3/minimap][minimap]]
 #+BEGIN_SRC
 git clone https://github.com/thackl/minidot.git
 #+END_SRC
+
+
 
 **** Samples
 #+BEGIN_SRC
