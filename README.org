@@ -1,11 +1,8 @@
 ** minidot
+
+[[etc/header.png]]
+
 Quickly produce pretty dotplots from [[https://github.com/lh3/minimap][minimap]] mappings using R/ggplot2.
-
-[[etc/prochlorococcus-small.svg]] [[etc/prochlorococcus-small.svg]]
-
-[[Samples][etc/prochlorococcus-small.svg]]
-
-[[etc/prochlorococcus.png]] [[etc/arabidopsis.png]]
 
 **** Dependencies
 - R packages: ggplot2, stringr, scales, argparse
@@ -16,29 +13,25 @@ Quickly produce pretty dotplots from [[https://github.com/lh3/minimap][minimap]]
 git clone https://github.com/thackl/minidot.git
 #+END_SRC
 
-
-
 **** Samples
 #+BEGIN_SRC
-make sample-virus
 make sample-prochlorococcus
 make sample-arabidopsis
 #+END_SRC
 
 Make sample commands will download required data, set up minimap (if not already
-in PATH) and run minidot.
+in $PATH) and run minidot.
 
-***** Viruses - vizualize internal repeat structure and diversity
-
-***** Prochlorococcus ecotypes - compare multiple bacterial strains
+***** Prochlorococcus ecotypes
 #+BEGIN_SRC
 # actual minidot command invoked by make sample-prochlorococcus after setting up the data
 minidot -s -o prochlorococcus.pdf MED4.da SB.fa NATLA2.fa LG.fa MIT9313.fa
 #+END_SRC
 
-Quickly compare synteny between bacterial finished and draft genome assemblies.
+Quickly compare genome organization among multiple bacterial genomes (finished
+and draft).
 
-
+[[etc/prochlorococcus.png]]
 
 ***** /A. thaliana/ vs /A. lyrata/ - compare two related eukaryotes
 #+BEGIN_SRC
@@ -46,6 +39,16 @@ Quickly compare synteny between bacterial finished and draft genome assemblies.
 minidot -o arabidopsis.pdf A.lyrata.fa A.thaliana.fa
 #+END_SRC
 
-Large genomes are automatically run in =fast= mode. For /A.t./ vs /A.l./,
-mapping & plotting takes about 1.5 minutes (desktop PC, 3 threads, 8GB
-RAM). That's faster than downloading genomes in the first place...
+Compare two related eukaryotic genomes. Larger genomes are automatically run in
+=fast= mode, which is less sensitive and looks only for larger stretches of
+similarity (>500bp). 
+
+For /A.t./ vs /A.l./, mapping & plotting takes about 1.5 minutes (desktop PC, 3
+threads, 8GB RAM). That's probably faster than downloading the genomes in the
+first place...
+
+[[etc/arabidopsis.png]]
+
+**** Contact
+Any kind of feedback is highly appreciated. Feel free to either report [[https://github.com/thackl/minidot/issues/new][issues]]
+directly via github or shoot me an email.
