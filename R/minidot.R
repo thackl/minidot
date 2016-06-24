@@ -54,7 +54,7 @@ parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output fil
 parser$add_argument("-S", "--no-self", action="store_true", default=FALSE, help="exclude plots of set against itself")
 parser$add_argument("--title", help="plot title")
 parser$add_argument("--theme", default="dark", help="themes: dark, light. [dark]")
-parser$add_argument("--width", default=20, help="plot width (cm)")
+parser$add_argument("--width", default=20, help="plot width (cm)", type="integer")
 
 args <- parser$parse_args()
 

@@ -14,6 +14,7 @@ Compute and plot dotplots.
   -m  mapper mode: fast, sensitive, auto (dep. on input size)
        or pass-through parameters as quoted string
   -s  include self comp. for multiple sets
+  -w  width in cm [20]
   -h  show help
   -V  show version
 
@@ -77,7 +78,7 @@ SCRIPT=$(basename ${BASH_SOURCE})
 
 # Execute getopt
 ARGS=`getopt --name "$SCRIPT" \
-    --options "o:M:m:shV" \
+    --options "o:M:m:w:shV" \
     -- "$@"`
 
 # Bad arguments
@@ -91,6 +92,7 @@ MBIN=minimap
 MOPT='auto' # TODO: reset if not minimap
 OPRE=minidot
 SELF='-S'
+WIDTH=''
 
 # Now go through all the options
 while true; do
@@ -106,6 +108,10 @@ while true; do
         -m)
             [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
             MOPT=$2;
+            shift 2;;
+        -w)
+            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
+            WIDTH="--width $2";
             shift 2;;
         -s)
             SELF='';
@@ -191,6 +197,6 @@ else
 fi;
 
 log plotting;
-"$DIR"/../R/minidot.R $SELF -i $PAF -l $TLEN -o $OPRE.$OSUF # R messages to fule
+"$DIR"/../R/minidot.R $SELF $WIDTH -i $PAF -l $TLEN -o $OPRE.$OSUF # R messages to fule
 [ $? -ne 0 ] && { loge failed; >&2; exit 1; }
 log " .. done ($OPRE.$OSUF)"
