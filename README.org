@@ -1,2 +1,34 @@
 minidot - quickly generate pretty dotplots from minimap mappings using R and
 ggplot.
+
+***** Dependencies
+- R packages: ggplot2, stringr, scales, argparse
+- curl, gzip (for samples only)
+
+***** Samples
+Make sample commands will download required data, set up minimap (if not already
+in PATH) and run minidot.
+#+BEGIN_SRC
+make sample-virus
+make sample-prochlorococcus
+make sample-arabidopsis
+#+END_SRC
+
+****** Viruses - vizualize internal repeat structure and diversity
+
+****** Prochlorococcus ecotypes - compare multiple bacterial strains
+Quickly compare synteny between bacterial finished and draft genome assemblies.
+
+#+BEGIN_SRC
+# actual minidot command invoked by make sample-prochlorococcus after setting up the data
+minidot -s -o prochlorococcus.pdf MED4.da SB.fa NATLA2.fa LG.fa MIT9313.fa
+#+END_SRC
+
+****** /A. thaliana/ vs /A. lyrata/ - compare two related eukaryotes
+Run large genomes in =fast= mode (auto-detect). Takes about 1.5 minutes on
+desktop PC - probably faster than the download.
+
+#+BEGIN_SRC
+# actual minidot command invoked by make sample-arabidopsis after setting up the data
+minidot -o arabidopsis.pdf A.lyrata.fa A.thaliana.fa
+#+END_SRC
