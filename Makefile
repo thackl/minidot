@@ -29,7 +29,7 @@ PMIT9313=$(PROC)/MIT9313.fa
 
 sample-prochlorococcus: minimap $(PROC) $(PMED4) $(PSB) $(PNATLA2) $(PLG) $(PMIT9313)
 	@echo "\nRunning minidot"
-	minidot -s -o prochlorococcus.pdf $(PMED4) $(PSB) $(PNATLA2) $(PLG) $(PMIT9313)
+	minidot -s -o $(PROC)/prochlorococcus.pdf $(PMED4) $(PSB) $(PNATLA2) $(PLG) $(PMIT9313)
 
 $(PROC):
 	mkdir -p $(PROC)
