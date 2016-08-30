@@ -45,18 +45,31 @@ humanize <- function(x, digits=2, sep=" ", unit="bp"){
 
 
 ## * read args/input
+ARGPARSE_TRUE <- TRUE
 parser <- ArgumentParser()
 
+## ** dryrun some args - allows interface with bash master script
+args.cmd <- commandArgs(TRUE)
+if (args.cmd[1] == "--argparse"){
+    ARGPARSE_TRUE <- "" # FALSE does not work - argparse bug
+    args.cmd <- args.cmd[-1]
+}
+
+## ** argparse
+
 ## -s (hort), --long ...
-parser$add_argument("-i", required=TRUE, metavar="PAF", help="supported formats: paf")
-parser$add_argument("-l", required=TRUE, metavar="LEN", help="per set sequence lengths")
+parser$add_argument("-i", required=ARGPARSE_TRUE, metavar="PAF", help="supported formats: paf")
+parser$add_argument("-l", required=ARGPARSE_TRUE, metavar="LEN", help="per set sequence lengths")
 parser$add_argument("-o", metavar="OUT", default="minidot.pdf", help="output file, .pdf/.png")
 parser$add_argument("-S", "--no-self", action="store_true", default=FALSE, help="exclude plots of set against itself")
 parser$add_argument("--title", help="plot title")
 parser$add_argument("--theme", default="dark", help="themes: dark, light. [dark]")
 parser$add_argument("--width", default=20, help="plot width (cm)", type="integer")
 
-args <- parser$parse_args()
+
+args <- parser$parse_args(args.cmd)
+
+if (ARGPARSE_TRUE == "") quit();
 
 ## debug
 #setwd("/home/thackl/projects/coding/sandbox/R-minimap-dotplots")
