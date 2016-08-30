@@ -9,17 +9,22 @@ Usage:
   minidot [OPTS] FASTA [FASTA ..]
 
 Compute and plot dotplots.
-  -o  output prefix [minidot]
-  -M  mapper [minimap]
-  -m  mapper mode: fast, sensitive, auto (dep. on input size)
-       or pass-through parameters as quoted string
-  -s  include self comp. for multiple sets
-  -w  width in cm [20]
-  -h  show help
-  -V  show version
+  -o OUT         output name and format: pdf, png [minidot.pdf]
+  -M MAPPER      mapper path and binary [minimap]
+  -m MODE        mapper mode: fast, sensitive, auto (dep. on input size) or
+                 pass-through parameters as quoted string [auto]
+  -T TMP         path to tmp file location [/tmp]
+
+EOF
+"$RSCRIPT" -h 2>/dev/null | grep '^  -' | grep -vP -- '^  -[hilo]|  --argparse'
+
+cat <<EOF
+
+  -h, --help     show help
+  -V, --version  show version
 
 single FASTA: run all-vs-all sequences.
-multiple FASTA: run all-vs-all FASTA.
+multiple FASTAS: run all-vs-all FASTAS.
 
 EOF
 exit 0;
@@ -58,10 +63,6 @@ mode2opts(){
 }
 
 
-
-## prep
-[[ $# -eq 0 ]] && usage;
-
 # get dir
 # ugly, but it works for Brian in the bbmap package
 pushd . > /dev/null
@@ -75,10 +76,15 @@ DIR="$(pwd)/"
 popd > /dev/null
 
 SCRIPT=$(basename ${BASH_SOURCE})
+RSCRIPT="$DIR"/../R/minidot.R
+
+## prep
+[[ $# -eq 0 ]] && usage;
 
 # Execute getopt
-ARGS=`getopt --name "$SCRIPT" \
-    --options "o:M:m:w:shV" \
+ARGS=`getopt -n "$SCRIPT" \
+ -o "o:M:m:w:hVST" \
+ -l "help,version,no-self,title:,theme:,width:" \
     -- "$@"`
 
 # Bad arguments
@@ -91,44 +97,27 @@ eval set -- "$ARGS"
 MBIN=minimap
 MOPT='auto' # TODO: reset if not minimap
 OPRE=minidot
-SELF='-S'
-WIDTH=''
+TMP=/tmp
 
 # Now go through all the options
+RARGS=""
 while true; do
     case "$1" in
-        -o)
-            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
-            OPRE=$2;
-            shift 2;;
-        -M)
-            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
-            MBIN=$2;
-            shift 2;;
-        -m)
-            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
-            MOPT=$2;
-            shift 2;;
-        -w)
-            [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1);
-            WIDTH="--width $2";
-            shift 2;;
-        -s)
-            SELF='';
-            shift;;
-        -h)
-            usage && exit 0;;
-        -V)
-            grep -m1 '^# Version' "$DIR"/$SCRIPT | sed "s/.*Version:\s*/$SCRIPT-/";
-            exit 0;;
-        --)
-            shift
-            break;;
-        *)
-            echo "$1: Unknown option" 1>&2 && exit 1;;
+        -o) [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1); OPRE="$2"; shift 2;;
+        -M) [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1); MBIN="$2"; shift 2;;
+        -m) [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1); MOPT="$2"; shift 2;;
+        -T) [ ! -n "$2" ] && (echo "$1: value required" 1>&2 && exit 1); TMP="$2"; shift 2;;
+        -h|--help) usage && exit 0;;
+        -V|--version) grep -m1 '^# Version' "$DIR"/$SCRIPT | sed "s/.*Version:\s*/$SCRIPT-/"; exit 0;;
+        --) shift; break;;
+        *) RARGS="$RARGS $1"; shift;; # echo "$1: Unknown option" 1>&2 && exit 1;;
     esac
 done
 
+## test pass-through options
+echo  "$RARGS"
+"$RSCRIPT" --argparse $RARGS
+[ $? -ne 0 ] && { loge failed; >&2; exit 1; }
 
 ## check for args
 [[ $# -eq 0 ]] && usage;
@@ -142,10 +131,10 @@ OSUF="${OPRE##*.}"
 [ "$OSUF" == "$OPRE" ] && OSUF=pdf
 OPRE="${OPRE%.*}"
 PAF=$OPRE.paf
-TFA=$OPRE.fa
-TLEN=$OPRE.len
-TML=$OPRE-map.log # temp mapper log
-TRL=$OPRE-plot.log # temp mapper log
+TFA=$TMP/$OPRE.fa
+TLEN=$TMP/$OPRE.len
+TML=$TMP/$OPRE-map.log # temp mapper log
+TRL=$TMP/$OPRE-plot.log # temp mapper log
 
 echo -n '' >$PAF;
 echo -n '' >$TFA;
@@ -197,6 +186,6 @@ else
 fi;
 
 log plotting;
-"$DIR"/../R/minidot.R $SELF $WIDTH -i $PAF -l $TLEN -o $OPRE.$OSUF # R messages to fule
+"$RSCRIPT" $RARGS -i $PAF -l $TLEN -o $OPRE.$OSUF # R messages to fule
 [ $? -ne 0 ] && { loge failed; >&2; exit 1; }
 log " .. done ($OPRE.$OSUF)"
